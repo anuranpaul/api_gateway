@@ -9,7 +9,8 @@ import (
 
 // Config structure
 type Config struct {
-	UserServiceURL string
+	UserServiceURL  string
+	AdminServiceURL string
 	Port           string
 }
 
@@ -21,7 +22,8 @@ func LoadConfig() *Config {
 	}
 
 	return &Config{
-		UserServiceURL: getEnv("USER_SERVICE_URL", "http://localhost:5001"),
+		UserServiceURL:  getEnv("USER_SERVICE_URL", "http://localhost:5001"),
+		AdminServiceURL: getEnv("ADMIN_SERVICE_URL", "http://localhost:5003"),
 		Port:           getEnv("GATEWAY_PORT", "8080"),
 	}
 }

@@ -25,6 +25,7 @@ func getUserHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	mux := http.NewServeMux()
+	mux.HandleFunc("/users", getUserHandler)
 	mux.HandleFunc("/users/test", getUserHandler)
 
 	server := &http.Server{
