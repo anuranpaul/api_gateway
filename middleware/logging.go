@@ -1,17 +1,51 @@
 package middleware
 
 import (
-	"log"
-	"net/http"
+	"github.com/gofiber/fiber/v2"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
-// RequestLogger logs incoming requests
-func RequestLogger(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// RequestLogger logs incoming requests using logrus
+func RequestLogger(log *logrus.Logger) fiber.Handler {
+	return func(c *fiber.Ctx) error {
 		start := time.Now()
-		next.ServeHTTP(w, r)
+		
+		// Process request
+		err := c.Next()
+		
+		// Calculate duration
 		duration := time.Since(start)
-		log.Printf("[%s] %s %s - %s", r.Method, r.RequestURI, r.RemoteAddr, duration)
+
+		// Get status code
+		statusCode := c.Response().StatusCode()
+
+		// Create log entry
+		log.WithFields(logrus.Fields{
+			"method":     c.Method(),
+			"path":       c.Path(),
+			"ip":         c.IP(),
+			"status":     statusCode,
+			"duration":   duration,
+			"user_agent": c.Get("User-Agent"),
+			"token":      c.Get("Authorization"),
+		}).Info("Request processed")
+
+		return err
+	}
+}
+
+// InitLogger initializes and configures logrus
+func InitLogger() *logrus.Logger {
+	log := logrus.New()
+	
+	// Configure logrus
+	log.SetFormatter(&logrus.JSONFormatter{
+		TimestampFormat: time.RFC3339,
 	})
+	
+	// Set log level
+	log.SetLevel(logrus.InfoLevel)
+	
+	return log
 }
