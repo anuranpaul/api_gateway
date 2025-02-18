@@ -1,13 +1,10 @@
 package middleware
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 	"strings"
-
 	"github.com/dgrijalva/jwt-go"
-	// "github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2"
 )
 
 // Secret key for JWT signing
@@ -37,8 +34,7 @@ func ValidateToken(tokenString string) (*jwt.Token, jwt.MapClaims, error) {
 }
 
 // CheckAuth validates JWT and extracts the role
-func CheckAuth(r *http.Request) (bool, string) {
-	authHeader := r.Header.Get("Authorization")
+func CheckAuth(authHeader string) (bool, string) {
 	if authHeader == "" {
 		return false, ""
 	}
@@ -59,21 +55,28 @@ func CheckAuth(r *http.Request) (bool, string) {
 	return true, role
 }
 
-// AuthMiddleware is the middleware to validate JWT and handle role-based access
-func AuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Check authorization
-		isValid, role := CheckAuth(r)
-		if !isValid {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
+// AuthMiddleware is the middleware to validate JWT
+func AuthMiddleware(c *fiber.Ctx) error {
+	// Get authorization header
+	authHeader := c.Get("Authorization")
+	if authHeader == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Missing authorization header",
+		})
+	}
 
-		// Add role to context for downstream use
-		r = r.WithContext(context.WithValue(r.Context(), "role", role))
+	// Validate token and get role
+	isValid, role := CheckAuth(authHeader)
+	if !isValid {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid token",
+		})
+	}
 
-		// Continue to next handler
-		next.ServeHTTP(w, r)
-	})
+	// Add role to context for downstream use
+	c.Locals("role", role)
+
+	// Continue to next handler
+	return c.Next()
 }
 

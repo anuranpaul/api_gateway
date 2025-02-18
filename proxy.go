@@ -1,25 +1,19 @@
 package main
 
 import (
-	"net/http"
-	"net/http/httputil"
-	"net/url"
-	"log"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/proxy"
 )
 
 // ReverseProxy forwards requests to the backend service
-func ReverseProxy(target string) http.Handler {
-	// Parse the URL of the backend
-	targetURL, err := url.Parse(target)
-	if err != nil {
-		log.Fatalf("Invalid backend URL: %s", err)
+func ReverseProxy(target string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Forward the request to the target service
+		if err := proxy.Do(c, target+c.Path()); err != nil {
+			return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+				"error": "Proxy forwarding failed",
+			})
+		}
+		return nil
 	}
-
-	// Create a new reverse proxy that will forward the request to the backend
-	proxy := httputil.NewSingleHostReverseProxy(targetURL)
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Don't modify the path - let the proxy handle it
-		proxy.ServeHTTP(w, r)
-	})
 }

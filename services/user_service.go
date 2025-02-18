@@ -1,9 +1,8 @@
 package main
 
 import (
-	"encoding/json"
+	"github.com/gofiber/fiber/v2"
 	"log"
-	"net/http"
 )
 
 type User struct {
@@ -12,27 +11,32 @@ type User struct {
 	Email string `json:"email"`
 }
 
-func getUserHandler(w http.ResponseWriter, r *http.Request) {
+func main() {
+	// Create new Fiber app
+	app := fiber.New(fiber.Config{
+		DisableStartupMessage: true,
+	})
+
+	// Setup routes
+	setupRoutes(app)
+
+	// Start server
+	log.Println("User Service running on port 5001")
+	log.Fatal(app.Listen(":5001"))
+}
+
+func setupRoutes(app *fiber.App) {
+	// User handlers
+	app.Get("/users", getUserHandler)
+	app.Get("/users/test", getUserHandler)
+}
+
+func getUserHandler(c *fiber.Ctx) error {
 	user := User{
 		ID:    1,
 		Name:  "John Doe",
 		Email: "johndoe@example.com",
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
-}
-
-func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/users", getUserHandler)
-	mux.HandleFunc("/users/test", getUserHandler)
-
-	server := &http.Server{
-		Addr:    ":5001",
-		Handler: mux,
-	}
-
-	log.Println("User Service running on port 5001")
-	log.Fatal(server.ListenAndServe())
+	return c.JSON(user)
 }

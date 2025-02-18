@@ -1,9 +1,8 @@
 package main
 
 import (
-	"encoding/json"
+	"github.com/gofiber/fiber/v2"
 	"log"
-	"net/http"
 )
 
 // Admin represents the structure for the admin
@@ -12,27 +11,31 @@ type Admin struct {
 	Name string `json:"name"`
 }
 
-// Admin functionality handler
-func getAdminHandler(w http.ResponseWriter, r *http.Request) {
+func main() {
+	// Create new Fiber app
+	app := fiber.New(fiber.Config{
+		DisableStartupMessage: true,
+	})
+
+	// Setup routes
+	setupRoutes(app)
+
+	// Start server
+	log.Println("Admin Service running on port 5003")
+	log.Fatal(app.Listen(":5003"))
+}
+
+func setupRoutes(app *fiber.App) {
+	// Admin handlers
+	app.Get("/admin", getAdminHandler)
+	app.Get("/admin/dashboard", getAdminHandler)
+}
+
+func getAdminHandler(c *fiber.Ctx) error {
 	admin := Admin{
 		ID:   1,
 		Name: "Admin User",
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(admin)
-}
-
-func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/admin", getAdminHandler)
-	mux.HandleFunc("/admin/dashboard", getAdminHandler) // Admin dashboard route
-
-	server := &http.Server{
-		Addr:    ":5003", // Admin service runs on port 5003
-		Handler: mux,
-	}
-
-	log.Println("Admin Service running on port 5003")
-	log.Fatal(server.ListenAndServe())
+	return c.JSON(admin)
 }

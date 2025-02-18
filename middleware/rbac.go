@@ -2,26 +2,30 @@ package middleware
 
 import (
 	"fmt"
-	"net/http"
+	"github.com/gofiber/fiber/v2"
 )
 
 // RequireRole is a middleware that checks if the user has the required role
-func RequireRole(requiredRole string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authenticated, role := CheckAuth(r)
-			if !authenticated {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
-				return
-			}
+func RequireRole(requiredRole string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Get authorization header
+		authHeader := c.Get("Authorization")
+		
+		// Check authentication and role
+		authenticated, role := CheckAuth(authHeader)
+		if !authenticated {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Unauthorized",
+			})
+		}
 
-			if role != requiredRole {
-				http.Error(w, fmt.Sprintf("Access denied for role: %s", role), http.StatusForbidden)
-				return
-			}
+		if role != requiredRole {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"error": fmt.Sprintf("Access denied for role: %s", role),
+			})
+		}
 
-			// Continue to next handler if role matches
-			next.ServeHTTP(w, r)
-		})
+		// Continue to next handler if role matches
+		return c.Next()
 	}
 }
