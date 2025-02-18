@@ -1,14 +1,15 @@
 package main
 
 import (
+	"example/API_Gateway/internal/config"
+	"example/API_Gateway/pkg/metrics"
+	"example/API_Gateway/pkg/middleware"
+	"example/API_Gateway/pkg/proxy"
 	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/sirupsen/logrus"
-	"example/API_Gateway/pkg/middleware"
-	"example/API_Gateway/pkg/metrics"
-	"example/API_Gateway/internal/config"
-	"example/API_Gateway/pkg/proxy"
 )
 
 var logger *logrus.Logger
@@ -43,8 +44,8 @@ func main() {
 	setupRoutes(app, config)
 	logger.Info("Routes configured successfully")
 
-	// Add metrics endpoint
-	app.Get("/metrics", metrics.MetricsHandler())
+	// Add metrics endpoint with admin protection
+	app.Get("/metrics", middleware.RequireRole("admin"), metrics.MetricsHandler())
 
 	// Start server
 	logger.WithFields(logrus.Fields{
