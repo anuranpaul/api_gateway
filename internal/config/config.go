@@ -12,6 +12,7 @@ type Config struct {
 	UserServiceURL  string
 	AdminServiceURL string
 	Port           string
+	DatabaseURL    string
 }
 
 // LoadConfig loads environment variables from a .env file
@@ -24,7 +25,8 @@ func LoadConfig() *Config {
 	return &Config{
 		UserServiceURL:  getEnv("USER_SERVICE_URL", "http://localhost:5001"),
 		AdminServiceURL: getEnv("ADMIN_SERVICE_URL", "http://localhost:5003"),
-		Port:           getEnv("GATEWAY_PORT", "8080"),
+		Port:           getEnv("PORT", "8080"),
+		DatabaseURL:    getEnv("DATABASE_URL", "postgres://postgres:password@localhost:5432/apigateway"),
 	}
 }
 

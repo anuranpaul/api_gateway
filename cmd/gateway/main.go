@@ -7,6 +7,11 @@ import (
 	"example/API_Gateway/pkg/proxy"
 	"time"
 
+	"example/API_Gateway/internal/db"
+	"example/API_Gateway/internal/handlers"
+	"example/API_Gateway/internal/repository"
+	"example/API_Gateway/internal/routes"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/sirupsen/logrus"
@@ -40,8 +45,20 @@ func main() {
 	app.Use(middleware.AuthMiddleware)
 	app.Use(metrics.PrometheusMiddleware)
 
+	// Initialize database
+	database, err := db.NewDB(config.DatabaseURL)
+	if err != nil {
+		logger.WithError(err).Fatal("Failed to connect to database")
+	}
+	defer database.Close()
+
+	// Initialize repositories and handlers
+	userRepo := repository.NewUserRepository(database)
+	userHandler := handlers.NewUserHandler(userRepo)
+
 	// Setup routes
 	setupRoutes(app, config)
+	routes.SetupUserRoutes(app, userHandler)
 	logger.Info("Routes configured successfully")
 
 	// Add metrics endpoint with admin protection
