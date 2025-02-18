@@ -1,17 +1,18 @@
 package test
 
 import (
-	"example/API_Gateway/Auth"
-	"github.com/dgrijalva/jwt-go"
+	"example/API_Gateway/internal/auth"
 	"testing"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 // Use the same secret key as in Auth/generate_jwt.go
 var secretKey = []byte("your-secret-key")
 
 func TestJWTContents(t *testing.T) {
-	// Get token from the Auth package
-	token := auth.GenerateJWT()
+	// Get token from the auth package
+	token := auth.GenerateJWT("testuser", "user")
 	
 	// Parse the token
 	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {

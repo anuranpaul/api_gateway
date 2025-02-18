@@ -1,8 +1,9 @@
-package main
+package services
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"log"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 // Admin represents the structure for the admin
@@ -11,21 +12,21 @@ type Admin struct {
 	Name string `json:"name"`
 }
 
-func main() {
+func StartAdminService() {
 	// Create new Fiber app
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 	})
 
 	// Setup routes
-	setupRoutes(app)
+	setupAdminRoutes(app)
 
 	// Start server
 	log.Println("Admin Service running on port 5003")
 	log.Fatal(app.Listen(":5003"))
 }
 
-func setupRoutes(app *fiber.App) {
+func setupAdminRoutes(app *fiber.App) {
 	// Admin handlers
 	app.Get("/admin", getAdminHandler)
 	app.Get("/admin/dashboard", getAdminHandler)

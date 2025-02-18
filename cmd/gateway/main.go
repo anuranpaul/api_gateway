@@ -5,8 +5,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/sirupsen/logrus"
-	"example/API_Gateway/middleware"
-	"example/API_Gateway/metrics"
+	"example/API_Gateway/pkg/middleware"
+	"example/API_Gateway/pkg/metrics"
+	"example/API_Gateway/internal/config"
+	"example/API_Gateway/pkg/proxy"
 )
 
 var logger *logrus.Logger
@@ -16,7 +18,7 @@ func main() {
 	logger = middleware.InitLogger()
 
 	// Load configuration
-	config := LoadConfig()
+	config := config.LoadConfig()
 	logger.Info("Configuration loaded successfully")
 
 	// Create new Fiber app
@@ -111,16 +113,16 @@ func setupIPRateLimiter(app *fiber.App) {
 }
 
 // setupRoutes configures all the routes for the application
-func setupRoutes(app *fiber.App, config *Config) {
+func setupRoutes(app *fiber.App, config *config.Config) {
 	// Admin routes
 	adminGroup := app.Group("/admin")
 	adminGroup.Use(middleware.RequireRole("admin"))
-	adminGroup.All("/*", ReverseProxy(config.AdminServiceURL))
+	adminGroup.All("/*", proxy.ReverseProxy(config.AdminServiceURL))
 	logger.Info("Admin routes configured")
 
 	// User routes
 	userGroup := app.Group("/users")
 	userGroup.Use(middleware.RequireRole("user"))
-	userGroup.All("/*", ReverseProxy(config.UserServiceURL))
+	userGroup.All("/*", proxy.ReverseProxy(config.UserServiceURL))
 	logger.Info("User routes configured")
 }

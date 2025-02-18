@@ -1,10 +1,8 @@
-package main
+package auth
 
 import (
-	"fmt"
 	"log"
 	"time"
-
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -30,14 +28,4 @@ func GenerateJWT(username, role string) string {
 	}
 
 	return tokenString
-}
-
-func main() {
-	// Generate tokens for different roles
-	adminToken := GenerateJWT("admin_user", "admin")
-	userToken := GenerateJWT("regular_user", "user")
-
-	// Print tokens
-	fmt.Println("Admin JWT Token:", adminToken)
-	fmt.Println("User JWT Token:", userToken)
 }

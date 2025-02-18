@@ -1,8 +1,9 @@
-package main
+package services
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"log"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type User struct {
@@ -11,21 +12,21 @@ type User struct {
 	Email string `json:"email"`
 }
 
-func main() {
+func StartUserService() {
 	// Create new Fiber app
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 	})
 
 	// Setup routes
-	setupRoutes(app)
+	setupUserRoutes(app)
 
 	// Start server
 	log.Println("User Service running on port 5001")
 	log.Fatal(app.Listen(":5001"))
 }
 
-func setupRoutes(app *fiber.App) {
+func setupUserRoutes(app *fiber.App) {
 	// User handlers
 	app.Get("/users", getUserHandler)
 	app.Get("/users/test", getUserHandler)
