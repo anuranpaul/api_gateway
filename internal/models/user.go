@@ -7,7 +7,7 @@ import (
 type User struct {
 	ID          int       `json:"id"`
 	Username    string    `json:"username"`
-	Password    string    `json:"-"` // "-" means this won't be included in JSON
+	Password    string    `json:"-"` 
 	Email       string    `json:"email"`
 	Role        string    `json:"role"`
 	CreatedAt   time.Time `json:"created_at"`
