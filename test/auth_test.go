@@ -4,7 +4,7 @@ import (
 	"example/API_Gateway/internal/auth"
 	"testing"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 // Use the same secret key as in Auth/generate_jwt.go

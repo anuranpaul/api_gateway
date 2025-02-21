@@ -53,15 +53,7 @@ func (h *UserHandler) GetUser(c *fiber.Ctx) error {
         })
     }
 
-    // Check if user is requesting their own data or is an admin
-    userRole := c.Locals("role").(string)
-    userID := c.Locals("user_id").(int)
-    if userRole != "admin" && userID != id {
-        return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-            "error": "Access denied",
-        })
-    }
-
+    // Get requested user details from database
     user, err := h.userRepo.GetUserByID(c.Context(), id)
     if err != nil {
         return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -69,7 +61,19 @@ func (h *UserHandler) GetUser(c *fiber.Ctx) error {
         })
     }
 
-    return c.JSON(user)
+    // Get requester's role from token
+    userRole := c.Locals("role").(string)
+
+    // Allow access if:
+    // 1. User is an admin (can access all), OR
+    // 2. User role is "user" (can access their own and other user profiles)
+    if userRole == "admin" || userRole == "user" {
+        return c.JSON(user)
+    }
+
+    return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+        "error": "Access denied",
+    })
 }
 
 // GetAllUsers handles retrieving all users (admin only)
@@ -107,14 +111,8 @@ func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
         })
     }
 
-    // Check if user is updating their own data or is an admin
+    // Get requester's role from token
     userRole := c.Locals("role").(string)
-    userID := c.Locals("user_id").(int)
-    if userRole != "admin" && userID != id {
-        return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-            "error": "Access denied",
-        })
-    }
 
     // Only admins can change roles
     if req.Role != "" && userRole != "admin" {
@@ -123,14 +121,14 @@ func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
         })
     }
 
-    user, err := h.userRepo.UpdateUser(c.Context(), id, &req)
+    updatedUser, err := h.userRepo.UpdateUser(c.Context(), id, &req)
     if err != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
             "error": err.Error(),
         })
     }
 
-    return c.JSON(user)
+    return c.JSON(updatedUser)
 }
 
 // DeleteUser handles user deletion
@@ -158,4 +156,33 @@ func (h *UserHandler) DeleteUser(c *fiber.Ctx) error {
     }
 
     return c.SendStatus(fiber.StatusNoContent)
+}
+
+// PatchUser handles partial user updates (for regular users)
+func (h *UserHandler) PatchUser(c *fiber.Ctx) error {
+    id, err := c.ParamsInt("id")
+    if err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "Invalid user ID",
+        })
+    }
+
+    var req models.UpdateUserRequest
+    if err := c.BodyParser(&req); err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "Invalid request body",
+        })
+    }
+
+    // Force role to be empty as users can't change roles
+    req.Role = ""
+
+    updatedUser, err := h.userRepo.UpdateUser(c.Context(), id, &req)
+    if err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": err.Error(),
+        })
+    }
+
+    return c.JSON(updatedUser)
 } 

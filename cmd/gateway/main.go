@@ -15,6 +15,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/sirupsen/logrus"
+
+	"example/API_Gateway/internal/cache"
 )
 
 var logger *logrus.Logger
@@ -42,7 +44,8 @@ func main() {
 	app.Use(middleware.RequestLogger(logger))
 	setupTokenRateLimiter(app)
 	setupIPRateLimiter(app)
-	app.Use(middleware.AuthMiddleware)
+	redisClient := cache.NewRedisClient()
+	app.Use(middleware.AuthMiddleware(redisClient))
 	app.Use(metrics.PrometheusMiddleware)
 
 	// Initialize database
@@ -55,10 +58,12 @@ func main() {
 	// Initialize repositories and handlers
 	userRepo := repository.NewUserRepository(database)
 	userHandler := handlers.NewUserHandler(userRepo)
+	authHandler := handlers.NewAuthHandler(redisClient)
 
 	// Setup routes
 	setupRoutes(app, config)
 	routes.SetupUserRoutes(app, userHandler)
+	routes.SetupAuthRoutes(app, authHandler)
 	logger.Info("Routes configured successfully")
 
 	// Add metrics endpoint with admin protection

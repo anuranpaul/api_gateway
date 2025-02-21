@@ -6,13 +6,13 @@ import (
 )
 
 func main() {
-	// Generate tokens for different roles
+	// Generate tokens for testing
 	adminToken := auth.GenerateJWT("admin_user", "admin")
-	userToken := auth.GenerateJWT("regular_user", "user")
+	userToken := auth.GenerateJWT("testuser", "user")
 
 	// Print tokens
-	fmt.Println("\nAdmin JWT Token:")
+	fmt.Println("\nAdmin Token:")
 	fmt.Println(adminToken)
-	fmt.Println("\nUser JWT Token:")
+	fmt.Println("\nUser Token:")
 	fmt.Println(userToken)
 }

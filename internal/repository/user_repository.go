@@ -5,6 +5,7 @@ import (
 	"example/API_Gateway/internal/db"
 	"example/API_Gateway/internal/models"
 	"fmt"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -58,16 +59,45 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id int) (*models.User,
 // UpdateUser updates a user's information
 func (r *UserRepository) UpdateUser(ctx context.Context, id int, req *models.UpdateUserRequest) (*models.User, error) {
     var user models.User
-    err := r.db.Pool.QueryRow(ctx,
-        `UPDATE users
-         SET username = COALESCE($1, username),
-             email = COALESCE($2, email),
-             role = COALESCE($3, role),
-             updated_at = CURRENT_TIMESTAMP
-         WHERE id = $4
-         RETURNING id, username, email, role, created_at, updated_at`,
-        req.Username, req.Email, req.Role, id,
-    ).Scan(&user.ID, &user.Username, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+    
+    // Build query dynamically based on provided fields
+    query := "UPDATE users SET "
+    params := []interface{}{}
+    paramCount := 1
+    updates := []string{}
+
+    if req.Username != "" {
+        updates = append(updates, fmt.Sprintf("username = $%d", paramCount))
+        params = append(params, req.Username)
+        paramCount++
+    }
+    if req.Email != "" {
+        updates = append(updates, fmt.Sprintf("email = $%d", paramCount))
+        params = append(params, req.Email)
+        paramCount++
+    }
+    if req.Role != "" {
+        updates = append(updates, fmt.Sprintf("role = $%d", paramCount))
+        params = append(params, req.Role)
+        paramCount++
+    }
+
+    if len(updates) == 0 {
+        return nil, fmt.Errorf("no fields to update")
+    }
+
+    query += strings.Join(updates, ", ")
+    query += fmt.Sprintf(" WHERE id = $%d RETURNING id, username, email, role, created_at, updated_at", paramCount)
+    params = append(params, id)
+
+    err := r.db.Pool.QueryRow(ctx, query, params...).Scan(
+        &user.ID,
+        &user.Username,
+        &user.Email,
+        &user.Role,
+        &user.CreatedAt,
+        &user.UpdatedAt,
+    )
 
     if err != nil {
         return nil, fmt.Errorf("error updating user: %v", err)
@@ -112,4 +142,19 @@ func (r *UserRepository) GetAllUsers(ctx context.Context) ([]*models.User, error
     }
 
     return users, nil
+}
+
+func (r *UserRepository) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+    var user models.User
+    err := r.db.Pool.QueryRow(ctx,
+        `SELECT id, username, email, role, created_at, updated_at
+         FROM users WHERE username = $1`,
+        username,
+    ).Scan(&user.ID, &user.Username, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+
+    if err != nil {
+        return nil, fmt.Errorf("error getting user by username: %v", err)
+    }
+
+    return &user, nil
 } 
